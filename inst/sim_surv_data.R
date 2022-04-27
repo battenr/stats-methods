@@ -19,13 +19,13 @@ set.seed(2022)
 
 # Baseline data definitions
 
-def <- defData(varname = "x1", formula = 0.5, dist = "binary")
-def <- defData(def, varname = "x2", formula = 0.5, dist = "binary")
+def <- defData(varname = "sex", formula = 0.5, dist = "binary")
+def <- defData(def, varname = "age", formula = "20+sex", dist = "normal")
 def <- defData(def, varname = "grp", formula = 0.5, dist = "binary")
 
 # Survival data definitions
 
-sdef <- defSurv(varname = "survTime", formula = "1.5*x1", scale = "grp*50 + (1-grp)*25",
+sdef <- defSurv(varname = "survTime", formula = "1.5*sex", scale = "grp*50 + (1-grp)*25",
                 shape = "grp*1 + (1-grp)*1.5")
 sdef <- defSurv(sdef, varname = "censorTime", scale = 80, shape = 1)
 
@@ -40,7 +40,7 @@ head(dtSurv)
 
 # A comparison of survival by group and x1
 
-dtSurv[, round(mean(survTime), 1), keyby = .(grp, x1)]
+dtSurv[, round(mean(survTime), 1), keyby = .(grp, sex)]
 
 cdef <- defDataAdd(varname = "obsTime", formula = "pmin(survTime, censorTime)", dist = "nonrandom")
 cdef <- defDataAdd(cdef, varname = "status", formula = "I(survTime <= censorTime)",
