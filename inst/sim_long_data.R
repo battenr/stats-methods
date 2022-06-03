@@ -21,12 +21,22 @@ set.seed(2022)
 
 # First need to make cross-sectional data 
 
+# age, sex, dosage, duration of prescription, province, marital status, smoking status, highest level of education, urban/rural and income
+
 tdef <- simstudy::defData(varname = "age", dist = "normal", formula = 45, variance = 10)
 tdef <- simstudy::defData(tdef, varname = "sex", dist = "binary", formula = 0.5)
-tdef <- simstudy::defData(tdef, varname = "bzd", dist = "binary", formula = 0.5)
+tdef <- simstudy::defData(tdef, varname = "bzd", dist = "binary", formula = "logit(0.5+")
+tdef <- simstudy::defData(tdef, varname = "bzd_dosage", dist = "normal", "")
+tdef <- simstudy::defData(tdef, varname = "bzd_duration", dist = "normal",
+tdef <- simstudy::defData(tdef, varname = "education", dist = "categorical", formula = "0.3; 0.2; 0.5")
+tdef <- simstudy::defData(tdef, varname = "urban_rural", dist = "categorical", formula = "0.3; 0.2; 0.5")
+tdef <- simstudy::defData(tdef, varname = "urban_rural", dist = "categorical", formula = "0.3; 0.2; 0.5")
+
+
+
 tdef <- simstudy::defData(tdef, varname = "high.blood.pressure", dist = "binary", formula = 0.5)
 
-# Variables needed for making 
+# Variables needed for making longitudinal
 
 tdef <- simstudy::defData(tdef, varname = "nCount", dist = "noZeroPoisson", formula = 6)
 tdef <- simstudy::defData(tdef, varname = "mInterval", dist = "gamma", formula = 30, variance = 0.01)
