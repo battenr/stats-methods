@@ -19,6 +19,9 @@ library(car)
 # Simulating data that would be expected from an oncology EHR
 
 variable.definitions <- simstudy::defData(varname = "sex", dist = "binary", formula = 0.5) %>% 
+  
+  # Note: need to figure out how to make age increase with time
+  
   simstudy::defData(varname = "age", dist = "normal", formula = "45 + 1.5*sex", variance = 10) %>% 
   simstudy::defData(varname = "ecog", dist = "binary", formula = 0.5) %>% 
   
@@ -88,7 +91,10 @@ data.mcar <- simstudy::genObs(longitudinal.data, missing.matrix, idvars = "id")
 
 # Data for Testing Missing Data Method ----
 
-data.mcar # from above section 
+df <- data.mcar %>% # from above section
+  dplyr::mutate(
+    age = age + (period/5)
+  )
 
 # Checking Proportion of Missing per Patient ----
 
