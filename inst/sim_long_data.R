@@ -23,8 +23,8 @@ set.seed(2022)
 
 # Independent variables
 
-tdef <- simstudy::defData(varname = "age", dist = "normal", formula = 45, variance = 10) %>% 
-  simstudy::defData(varname = "sex", dist = "binary", formula = 0.5) %>% 
+tdef <- simstudy::defData(varname = "sex", dist = "binary", formula = 0.5) %>% 
+  simstudy::defData(varname = "age", dist = "normal", formula = 45, variance = 10) %>% 
 # tdef <- simstudy::defData(tdef, varname = "bzd_dosage", dist = "normal", "1.5*bzd+1.5*age+0.5*sex")
 # parking bzd dosage for now for simplicity
   simstudy::defData(varname = "province", dist = "categorical", formula = "0.2; 0.2; 0.2; 0.2; 0.2") %>% 
@@ -35,7 +35,7 @@ tdef <- simstudy::defData(varname = "age", dist = "normal", formula = 45, varian
   
   # Adverse Event 
   
-  simstudy::defData(varname = "anxiety", dist = "binary", formula = 0.5) %>% 
+  simstudy::defData(varname = "anxiety", dist = "binary", formula = "0+1.5*age+0.5*sex", link = "logit")  %>% 
   simstudy::defData(varname = "depression", dist = "binary", formula = 0.5) %>% 
   simstudy::defData(varname = "diabetes_mellitus", dist = "binary", formula = 0.5) %>% 
   simstudy::defData(varname = "high_blood_pressure", dist = "binary", formula = 0.5) %>% 
@@ -72,12 +72,20 @@ dtTime
 
 #... If Dependent on Covariates ----
 
-formula1 <- c("-2 + 2*sex + .5*age", "-1 - 2*sex + .5*age")
-dtExp <- simstudy::trtObserve(dtTime, formulas = formula1, logit.link = TRUE, grpName = "bzd")
+exp(0.25)
 
+formula1 <- c("0 + .252*sex + .5*age", "0 - 2*sex + .5*age")
+
+dtExp <- simstudy::trtObserve(dtTime, formulas = formula1, logit.link = TRUE, grpName = "bzd")
 
 # Update Definitions ----
 
-# Updating definition to include age 
+# Updating definition to make age increase with time
 
-simstudy::updateDef()
+df <- dtExp %>% 
+  dplyr::mutate(
+    age = age+(timeID/12)
+  ) %>% 
+  dplyr::rename(
+    patientid = id
+  ) 

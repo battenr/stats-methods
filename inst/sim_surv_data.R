@@ -6,6 +6,7 @@
 
 library(tidyverse)
 library(simstudy)
+library(survival)
 
 #... Dependencies ----
 
@@ -21,12 +22,12 @@ set.seed(2022)
 
 def <- defData(varname = "sex", formula = 0.5, dist = "binary")
 def <- defData(def, varname = "age", formula = "20+sex", dist = "normal")
-def <- defData(def, varname = "grp", formula = 0.5, dist = "binary")
+def <- defData(def, varname = "trt", formula = 0.5, dist = "binary")
 
 # Survival data definitions
 
-sdef <- defSurv(varname = "survTime", formula = "1.5*sex", scale = "grp*50 + (1-grp)*25",
-                shape = "grp*1 + (1-grp)*1.5")
+sdef <- defSurv(varname = "survTime", formula = "1.5*sex+10*age", scale = "trt*50 + (1-trt)*25",
+                shape = "trt*1 + (1-trt)*1.5")
 sdef <- defSurv(sdef, varname = "censorTime", scale = 80, shape = 1)
 
 sdef
@@ -40,7 +41,7 @@ head(dtSurv)
 
 # A comparison of survival by group and x1
 
-dtSurv[, round(mean(survTime), 1), keyby = .(grp, sex)]
+dtSurv[, round(mean(survTime), 1), keyby = .(trt, sex)]
 
 cdef <- defDataAdd(varname = "obsTime", formula = "pmin(survTime, censorTime)", dist = "nonrandom")
 cdef <- defDataAdd(cdef, varname = "status", formula = "I(survTime <= censorTime)",
@@ -52,7 +53,7 @@ head(dtSurv)
 
 # estimate proportion of censoring by x1 and group
 
-dtSurv[, round(1 - mean(status), 2), keyby = .(grp, x1)]
+dtSurv[, round(1 - mean(status), 2), keyby = .(trt, sex)]
 
 # Baseline data definitions
 
