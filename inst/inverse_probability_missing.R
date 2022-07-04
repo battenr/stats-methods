@@ -48,13 +48,14 @@ variable.definitions <- simstudy::defData(varname = "sex", dist = "binary", form
 #... Generating cross-sectional data ----
 
 cross.sectional.data <- simstudy::genData(1000, variable.definitions)
-cross.sectional.data
 
 #... Adding Treatment ----
 
-cross.sectional.data <- simstudy::trtObserve(cross.sectional.data, formulas = 0.5, logit.link = FALSE, 
-                                             grpName = "trt")
+formula1 <- c(0.45, 0.35, 0.2)
+formula1 <- c("-3+sex-1.5*age", "10 + sex + 1.5*age")
 
+cross.sectional.data <- simstudy::trtObserve(cross.sectional.data, formulas = formula1, 
+                                             logit.link = TRUE, grpName = "LOT")
 #... Making Longitudinal ----
 
 longitudinal.data <- simstudy::addPeriods(cross.sectional.data, n = 5)
@@ -98,10 +99,29 @@ df <- data.mcar %>% # from above section
 
 # Checking Proportion of Missing per Patient ----
 
-data.mcar %>% 
-  dplyr::group_by(id) %>% 
+df %>% 
   count(response)
 
+# Multiple Imputation ----
 
+library(mice)
+mice::md.pattern(df)
+imp <- mice(df, maxit = 2, m = 2, seed = 1)
 
+?mice
 
+mice::stripplot(imp, ecog, pch = 19, xlab = "Imputation number")
+
+glmcorr
+
+fit <- with(imp, glm(response ~ ecog))
+
+summary(pool(fit))
+
+?pool
+
+typeof(fit)
+
+?broom::tidy()
+
+broom::ti
