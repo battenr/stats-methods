@@ -71,5 +71,3 @@ km.fit
 
 # Cox Proportional Hazard Model ----
 
-survival::coxph()
-
