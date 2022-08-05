@@ -90,5 +90,63 @@ ggplot(data = negbin, mapping = aes(x = x)) + geom_density()
 
 # Repeating Letters (for categorical variables) ----
 
+# rep can be used to repeat what you are trying to do 
 
+# letters are the 26 letters of the alphabet
 
+# Useful for categorical variables like if you wanted 
+
+rep(letters[1:3], each = 4)
+
+# to repeat elementwise
+
+rep(letters[1:3], times = 4)
+
+# Simulating Datasets ----
+
+# let's assume we have age, sex, and ecog status
+
+df <- data.frame(
+  age = runif(100, min = 30, max = 70),
+  ecog = rep(letters[1:2], times = 50),
+  sex = rbinom(100, size = 1, prob = 0.30)
+) %>% 
+  dplyr::mutate(
+    ecog = dplyr::case_when(
+      ecog ~ "a" 
+    )
+  )
+
+# Simulated Data with a difference among groups ----
+
+response = rnorm(n = 6, mean = c(5,10), sd = 1)
+
+# the function draws iteratively from each distribution
+# (i.e., once from distribution with mean = 5, sd = 1 & once from
+# mean = 10, sd = 1
+
+group = rep(letters[1:2], length.out = 6) # using length.out 
+# argument will result in the correct output length
+
+?rep
+
+# Replicate ----
+
+# 3 different times, draw 5 numbers from the normal 
+# distribution with mean = 0 and sd = 1
+
+replicate( n = 3, 
+           expr = rnorm(n = 5, mean = 0, sd = 1), 
+           simplify = TRUE)
+
+?replicate
+
+# Using replicate to repeatedly make a dataset
+
+simlist = replicate(n = 3,
+                    expr = data.frame(
+                      group = rep(letters[1:2], each = 3),
+                      response = rnorm(n = 6, mean = 0, sd = 1),
+                      simplify = FALSE
+                    ))
+str(simlist)
