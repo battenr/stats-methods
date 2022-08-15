@@ -10,3 +10,8 @@ library(tidyverse)
 library(marginaleffects)
 
 #... Dependencies ----
+
+# Parametric G-Formula ----
+
+# following from https://vincentarelbundock.github.io/marginaleffects/articles/gformula.html
+
