@@ -147,6 +147,7 @@ simlist = replicate(n = 3,
                     expr = data.frame(
                       group = rep(letters[1:2], each = 3),
                       response = rnorm(n = 6, mean = 0, sd = 1),
-                      simplify = FALSE
+                      simplify = TRUE
                     ))
-str(simlist)
+
+

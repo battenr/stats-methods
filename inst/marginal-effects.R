@@ -3,7 +3,7 @@
 #... Libraries ----
 
 library(tidyverse)
-install.packages("marginal")
+library(marginaleffects)
 
 #... Dependencies ----
 
