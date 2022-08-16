@@ -18,7 +18,8 @@ df <- data.frame(
   bzd = rbinom(1000, size = 1, prob = 0.72),
   sex = rbinom(1000, size = 1, prob = 0.81),
   age = runif(1000, min = 18, max = 90),
-  ed = rep(letters[1:4], length.out = 1000)
+  ed = sample(x = c("BSc", "HS", "MSc", "PhD"), size = 1000, replace = TRUE,
+              prob = c(0.40, 0.30, 0.20, 0.10))
 )
 
 # Broken down by using functions ----

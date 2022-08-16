@@ -11,7 +11,33 @@ library(tidyverse)
 
 #... Dependencies ----
 
-# Learning how to simulate data using base R and this information:
+# List of Distributions ----
+
+rnbinom() # Negative Binomial
+rbeta() # Beta
+rbinom() # Binomial
+rcauchy() # Cauchy
+rchisq() # Chi-squared distribution
+rexp() # Exponential
+rgamma() # Gama Distribution
+rf() # F-Distribution
+rgeom() # Geometric Distrbution
+rhyper() # Hypergeometric Distribution
+rlnorm() # Log-Normal
+rlogis() # Logistic
+rmultinom() # Multinomial
+rnorm() # Normal
+rpois() # Poisson
+rsignrank() # Wilcoxon Signed Rank Statistic
+rt() # Student t Distribution
+rweibull() # Weibull Distribution
+rwilcox() # Wilcoxon Rank Sum Statistic
+rWishart() # Wishart Distributed Matrices
+
+
+
+
+# Learning how to simulate data using base R and this information: ----
 # https://aosmith.rbind.io/2018/08/29/getting-started-simulating-data/#overview
 
 # Central Limit Theorem ----
