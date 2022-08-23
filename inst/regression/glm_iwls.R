@@ -22,6 +22,16 @@ df <- data.frame(
               prob = c(0.40, 0.30, 0.20, 0.10))
 )
 
+
+set.seed(2222)
+
+test <- data.frame(
+  age = runif(1000, min = c(18, 20), max = c(90, 75))
+)
+
+age.test1 <- runif(1000, min = 18, max = 90) %>% as.data.frame()
+age.test2 <- runif(1000, min = 20, 75) %>% as.data.frame()
+
 # Broken down by using functions ----
 
 #... Weighted Linear Model Function ----
