@@ -117,3 +117,50 @@ IRLS(df[,4], df[,1]) # age = 0.004788 using glm, 0.004588011 using our functions
 
 head(df)
 
+# Calculating a Different way ----
+
+# Using https://m-clark.github.io/models-by-example/newton-irls.html#estimation-37
+
+irls <- function(X, y, tol = 1e-12, iter = 500){
+  # intialize
+  int  = log(mean(y) / (1 - mean(y)))   # intercept
+  beta = c(int, rep(0, ncol(X) - 1))
+  currtol = 1
+  it = 0
+  ll = 0
+  
+  while (currtol > tol && it < iter) {
+    it = it + 1
+    ll_old = ll
+    
+    eta  = X %*% beta
+    mu   = plogis(eta)[,1]
+    s    = mu * (1 - mu)
+    S    = diag(s)
+    z    = eta + (y - mu)/s
+    beta = solve(t(X) %*% S %*% X) %*% (t(X) %*% (S %*% z))
+    var = solve((t(X) %*% S %*% X))
+    
+    
+    ll = sum(
+      dbinom(
+        y,
+        prob = plogis(X %*% beta),
+        size = 1,
+        log  = TRUE
+      )
+    )
+    
+    currtol = abs(ll - ll_old)
+  }
+  
+  list(
+    beta = beta,
+    var = var,
+    iter = it,
+    tol  = currtol,
+    loglik  = ll,
+    weights = plogis(X %*% beta) * (1 - plogis(X %*% beta))
+  )
+}
+
