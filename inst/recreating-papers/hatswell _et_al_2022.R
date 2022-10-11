@@ -6,10 +6,14 @@
 
 library(tidyverse)
 library(truncnorm)
+library(survminer)
+library(survival)
 
 #... Dependencies ----
 
 #... Pins ----
+
+set.seed(20220918)
 
 # Data ----
 
@@ -17,14 +21,6 @@ n.eca <- 500
 n.intervention <- 750
 
 #External Control Arm (ECA) ----
-
-set.seed(20220918)
-
-6*500
-?sample
-?rep
-
-library(tidyverse)
 
 df.eca <- data.frame(
   id = as.character(rep(1:n.eca, each = 6))
@@ -59,9 +55,7 @@ df.eca.lot1 <- df.eca %>%
   ) %>% 
   dplyr::select(
     id, LOT, starts_with("x")
-  )
-
-rm(test)
+  ) 
 
 #... Joining LOT1 values to rest of dataset ----
 
@@ -254,11 +248,25 @@ df.eca.char <- df.eca.lot1 %>% dplyr::full_join(df.eca, by = c("id", "LOT")) %>%
       LOT == 6 ~ lag(x8) + rnorm(1, mean = 0, sd = 5) + rnorm(1, mean = -9, sd = 5)
     )
     
+  ) %>% 
+  dplyr::ungroup()
+
+df.eca <- df.eca.char %>% 
+  dplyr::mutate(
+    rate = 3 + (1/3)*(x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8),
+    lamdba = 1/exp(rate),
+    C = rexp(1008, rate = lambda),
+    time = pmin(60, C),
+    status = as.numeric(C <= 60)
   )
 
-df.eca <- df.eca.char
+# KM Curves ----
 
-    
+survminer::ggsurvplot(
+  fit = survfit(Surv(time, status) ~ LOT, 
+                data = df.eca %>% dplyr::filter(starting_lot == LOT), 
+  xlab = "Days", 
+  ylab = "Overall survival probability")   
 
   
  
