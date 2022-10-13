@@ -33,8 +33,8 @@ df = data.frame(
                    replace = TRUE, 
                    prob = c(0.40, 0.30, 0.20, 0.10)
                    ),
- candy_amount = runif(n = n.obs, min = , max = 2), # number of pieces of candy
- candy_type = sample (x = c("skittles", "reeses cup", "m and ms", "starburst", "hot tamales"),
+ candy_amount = runif(n = n.obs, min = 20, max = 100), # number of pieces of candy
+ candy_type = sample (x = c("skittles", "popeye sticks", "candy corn", "lemon heads", "M&Ms"),
                       size = n.obs, 
                       replace = TRUE, 
                       prob = c(0.15, 0.30, 0.15, 0.20, 0.20)
@@ -42,25 +42,27 @@ df = data.frame(
 ) %>% 
   dplyr::mutate(
     rho = 1, 
-    beta_age = 0.1, 
+    beta_age = 0.01, 
     beta_sex = 0.2, 
     beta_costume = dplyr::case_when(
-      costume == "avocado" ~ 0.30, 
-      costume == "bumblebee" ~ 0.15, 
-      costume == "pumpkin" ~ 0.20, 
-      costume = "lion" ~ 0.1),
-    beta_ca = 0.05,
+      costume == "avocado" ~ 0.01, 
+      costume == "bumblebee" ~ 0.03, 
+      costume == "pumpkin" ~ 0.05, 
+      costume == "lion" ~ 0.02),
+    beta_ca = 0.005,
     beta_candy_type = dplyr::case_when(
-      costume == "avocado" ~ 0.30, 
-      costume == "bumblebee" ~ 0.15, 
-      costume == "pumpkin" ~ 0.20, 
-      costume = "lion" ~ 0.1),
+      # Note for self: the bigger the value, the quicker the event (i.e., quicker person eats candy)
+      candy_type == "skittles" ~ 0.1, 
+      candy_type == "popeye sticks" ~ 0.05, 
+      candy_type == "candy corn" ~ 0.00003, 
+      candy_type == "lemon heads" ~ 0.020,
+      candy_type == "M&Ms" ~ 0.20),
     
     
     lambda = 0.01, 
     rateC = 0.001, 
     
-    x_beta = beta_age*age + beta_sex*sex + beta_costume + beta_ca*candy_amount + beta_candy, 
+    x_beta = beta_age*age + beta_sex*sex + beta_costume + beta_ca*candy_amount + beta_candy_type, 
     lambda_wiki = lambda^(-1/rho),
     lambda_prime = lambda_wiki/exp(x_beta/rho), 
     Tlat = rweibull(n = n.obs, shape = rho, scale = lambda_prime), 
@@ -70,9 +72,21 @@ df = data.frame(
     status = as.numeric(Tlat <= C)
   )
 
+survminer::ggsurvplot(survfit(Surv(time, status) ~ candy_type, 
+                              data = df), 
+                      data = df, 
+                      risk.table = TRUE)
+
+survminer::ggsurvplot(survfit(Surv(time, status) ~ 1, 
+                              data = df), 
+                      data = df, 
+                      risk.table = TRUE)
+
+
+
 # Fitting Cox PH Model ----
 
-fit.coxph <- survival::coxph(Surv(time, status) ~ age + sex, 
+fit.coxph <- survival::coxph(Surv(time, status) ~ age + sex + costume + candy_type + candy_amount, 
                              data = df)
 
 fit.coxph$coefficients
@@ -86,7 +100,8 @@ summary(fit.coxph)
 fit <- survfit(Surv(time, status) ~ 1, 
                data = df)
 
-survminer::ggsurvplot(fit, 
+survminer::ggsurvplot(survfit(Surv(time, status) ~ 1, 
+                              data = df), 
                       data = df, 
                       risk.table = TRUE)
 
@@ -105,4 +120,15 @@ survminer::ggsurvplot(fit,
                       data = df, 
                       risk.table = TRUE,
                       fun = "event")
+
+#... Stratified by Candy Type ----
+
+# trying to make it so that candy corn lasts longer (i.e., people don't want to eat it)
+
+fit <- survfit(Surv(time, status) ~ candy_type, 
+               data = df)
+
+survminer::ggsurvplot(fit, 
+                      data = df, 
+                      risk.table = TRUE)
 
