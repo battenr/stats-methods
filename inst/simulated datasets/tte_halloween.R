@@ -132,3 +132,5 @@ survminer::ggsurvplot(fit,
                       data = df, 
                       risk.table = TRUE)
 
+print(cox.zph(fit.coxph))
+plot(cox.zph(fit.coxph))
