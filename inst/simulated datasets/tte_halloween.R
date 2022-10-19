@@ -23,9 +23,11 @@ library(survminer)
 
 set.seed(10112022) # October 11, 2022
 
-n.obs = 593
+# n.obs = 593
+n.obs = 100
 
 df = data.frame(
+ id = sample(x = 1:n.obs, size = n.obs, replace = FALSE),
  age = runif(n= n.obs, min = 5, max = 22),
  sex = rbinom(n = n.obs, size = 1, prob = 0.81), # 1 = female
  costume = sample( x = c("avocado","bumblebee", "pumpkin", "lion"),
@@ -82,7 +84,38 @@ survminer::ggsurvplot(survfit(Surv(time, status) ~ 1,
                       data = df, 
                       risk.table = TRUE)
 
+# Plot of Data ----
 
+ggplot(data = df) + 
+  geom_col(aes(x = time, y = id), width  = 3) + 
+  geom_point(aes(x = time, y = id, shape = as.character(status))) +
+  coord_flip()
+
+# Barbell Plot ----
+
+df.50id <- data.frame(
+  id = sample(1:n.obs, size = 100)
+)
+
+df.50 <- df.50id %>% 
+  dplyr::left_join(
+    df, 
+    by = "id" 
+  )
+
+ggplot(data = df.50) + 
+  geom_segment(aes(x = time, y = id,
+               xend = status, yend = id)) +
+  geom_col(aes(y = time, y = id, color = status))
+
+
+ggplot(data = df.50) + 
+  geom_col(aes(x = time, y = id), width  = 0.5) + 
+  geom_point(aes(x = time, y = id, shape = as.character(status))) +
+  coord_flip()
+  
+
+?geom_col
 
 # Fitting Cox PH Model ----
 

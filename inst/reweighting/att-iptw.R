@@ -219,3 +219,5 @@ predict(ps.fit, newdata = lalonde)
 summary(ps.fit)
 summary(ps.mod)
 logLik(ps.mod)
+
+# Comparing Stabilized vs Unstabilized Weights for ATT Estimand ----
