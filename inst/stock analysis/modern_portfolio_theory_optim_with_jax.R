@@ -129,9 +129,22 @@ mu.aal/sigma.aal
 
 # Making Function for Calculation Log of Return ----
 
-log_return <- function(){}
+log_return <- function(var){
+  return = var/lag(var)
+  log_of_return = log(return)
+  return(log_of_return)
+}
 
-log_to_price <- function(logeturn)
+log_to_price <- function(var, original_price = 1.0){
+  
+  # variable is the log of the return
+  
+  price_change = exp(cumsum(replace_na(var, 0)))
+  price = original_price*price_change
+  
+  return(price)
+  
+}
 
 # Modelling Multiple Stocks ----
 
@@ -164,6 +177,8 @@ ggplot(dat %>% dplyr::filter(name == "AAPL" | name == "AMZN"), mapping = aes(x =
 
 #... Multivariate Normal ----
 
+library(MASS)
+
 df.appl.amzn = data.frame(
   BRZE , AAPL , SBUX , AAL , WMT , AMZN ,
   TMDX , XOM , NFLX , COIN , VTNR , SIGA 
@@ -177,30 +192,48 @@ df.appl.amzn = data.frame(
   ) %>% 
   dplyr::select(AAPL, AMZN) %>% 
   dplyr::mutate(
-    aapl_return = price/lag(price),
-    aappl_log_return = log(return),
-    log_aapl = log(AAPL), 
-    log_amzn = log(AMZN),
-    aapl_log_cumsum = cumsum(log_aapl),
-    amzn_log_cumsum = cumsum(log_amzn)
+    aapl_log_return = log_return(AAPL),
+    amzn_log_return = log_return(AMZN)
+    # aapl_new_price = log_to_price(AAPL, original_price = 172.14),
+    # amzn_new_price = log_to_price(AMZN, original_price = 157.7845)
   ) %>% 
   tibble::rownames_to_column("date")
-  
 
-df.for.mean <- dat %>% dplyr::filter(name == "AAPL" | name == "AMZN") 
+df.for.mean = df.log %>% 
+  dplyr::filter(
+    name == "AMZN" | name == "AAPL"
+  ) 
 
-mu.aapl.amzn = mean(df.for.mean$price)
-sigma.appl.amzn = sqrt(diag(cov(df.appl.amzn %>% dplyr::select(log_aapl, log_amzn))))
+df.for.mean$log_return
+
+mu.aapl =  mean(df.appl.amzn$aapl_log_return, na.rm = TRUE)
+mu.amzn = mean(df.appl.amzn$amzn_log_return, na.rm = TRUE)
+mu.both = mean(df.for.mean$log_return, na.rm = TRUE)
+sigma.appl.amzn = cov(df.appl.amzn %>% dplyr::select(aapl_log_return, amzn_log_return) %>% drop_na())
 sigma.appl.amzn
 
-mean(df.appl.amzn$log_aapl)
-mean(df.appl.amzn$log_amzn)
+sigma = matrix(c(0.0005810042, 0.0006949783,
+                 0.0006949783, 0.0013516147),
+               2,
+               2)
+
+mu = matrix(c(mu.aapl, mu.amzn))
 
 df.predict.mn <- data.frame(
-  appl_price = rmultinom(),
-  amzn_price = rmulitnom(),
+  log_return = MASS::mvrnorm(n = 84, mu = mu, Sigma = sigma),
   date = df.aal$date
-)
+) %>% 
+  dplyr::mutate(
+    aapl_price = log_to_price(log_return.1, original_price = 172.14),
+    amzn_price = log_to_price(log_return.2, original_price = 157.7845)
+  )
+
+ggplot(data = df.predict.mn, mapping = aes(x = date)) +
+  geom_line(aes(y = aapl_price), color = "orange", group = "AAPL") + 
+  geom_line(aes(y = amzn_price), color = "blue")
+
+
+library(MASS)
 
 diag(sqrt(cov(df.appl.amzn)))
 cov(df.appl.amzn)
@@ -216,3 +249,7 @@ ggplot(df.appl.amzn, mapping = aes(x = as.Date(date))) +
 
 ggplot(df.aal.cumsum, mapping = aes(x = date, y = logcumsum)) + 
   geom_line()
+
+# Modern Portfolio Theory ----
+
+
