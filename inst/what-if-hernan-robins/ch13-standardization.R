@@ -8,7 +8,7 @@
 
 #... Libraries ----
 
-
+library(tidyverse)
 
 #... Dependencies ----
 
@@ -20,8 +20,12 @@ nhefs <- readr::read_csv("data/nhefs.csv")
 
 # Program 13.1: Estimating Mean Outcome ----
 
+# Goal here is to determine the mean outcome in patients by fitting a model then predicting the outcome
+
 # some preprocessing of the data
-nhefs$cens <- ifelse(is.na(nhefs$wt82), 1, 0)
+nhefs$cens <- ifelse(is.na(nhefs$wt82), 1, 0) # adding a censoring variable. 1 if it's missing, 0 if weight isn't missing
+
+# Fitting a model using the appropriate covariates of interest. Later we'll use this model to predict the outcome
 
 fit <-
   glm(
