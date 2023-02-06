@@ -8,8 +8,7 @@
 
 #... Libraries ----
 
-library(tidyverse)
-library(readr)
+
 
 #... Dependencies ----
 
