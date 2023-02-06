@@ -1,6 +1,6 @@
 # Title: Chapter 13 of What If by Hernan and Robins
 
-# working through the R code here:
+# working through the R code here: (it accompanies the book)
 
 # https://remlapmot.github.io/cibookex-r/standardization-and-the-parametric-g-formula.html
 
@@ -22,10 +22,25 @@ nhefs <- readr::read_csv("data/nhefs.csv")
 
 # Goal here is to determine the mean outcome in patients by fitting a model then predicting the outcome
 
-# some preprocessing of the data
-nhefs$cens <- ifelse(is.na(nhefs$wt82), 1, 0) # adding a censoring variable. 1 if it's missing, 0 if weight isn't missing
+#... Pre-Processing Data ----
+
+nhefs = nhefs %>% 
+  dplyr::mutate(
+    cens = ifelse(is.na(wt82), 1, 0) # if weight is missing then consider censored
+  )
+
+#... Fitting Model ----
 
 # Fitting a model using the appropriate covariates of interest. Later we'll use this model to predict the outcome
+
+fit <- glm(
+  wt82_71 ~ qsmk + sex + race + age + I(age * age) + as.factor(education)
+  + smokeintensity + I(smokeintensity * smokeintensity) + smokeyrs
+  + I(smokeyrs * smokeyrs) + as.factor(exercise) + as.factor(active)
+  + wt71 + I(wt71 * wt71) + qsmk * smokeintensity,
+  data = nhefs
+)
+
 
 fit <-
   glm(

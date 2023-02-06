@@ -25,7 +25,7 @@ df %>% group_by(trt, response) %>% summarize(n = n())
 
 probsens.conf(matrix(c(46, 155, 58, 175),
                      dimnames = list(c("Response", "No: Response"), c("Trt", "Control")), nrow = 2, byrow = TRUE),
-              reps = 20000,
+              reps = 20000, 
               prev.exp = list("triangular", c(.7, .9, .8)),
               prev.nexp = list("trapezoidal", c(.03, .04, .05, .06)),
               risk = list("triangular", c(.6, .7, .63)),
