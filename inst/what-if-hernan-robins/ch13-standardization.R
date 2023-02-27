@@ -41,16 +41,7 @@ fit <- glm(
   data = nhefs
 )
 
-
-fit <-
-  glm(
-    wt82_71 ~ qsmk + sex + race + age + I(age * age) + as.factor(education)
-    + smokeintensity + I(smokeintensity * smokeintensity) + smokeyrs
-    + I(smokeyrs * smokeyrs) + as.factor(exercise) + as.factor(active)
-    + wt71 + I(wt71 * wt71) + qsmk * smokeintensity,
-    data = nhefs
-  )
-summary(fit)
+summary(fit) # Summary of the model fit 
 
 nhefs$predicted.meanY <- predict(fit, nhefs)
 
@@ -68,11 +59,25 @@ nhefs[which(nhefs$seqn == 24770), c(
   "wt71"
 )]
 
+#... Calculating overall mean ----
+
+nhefs %>% 
+  dplyr::filter(
+    cens == 0 
+  ) %>% 
+  summarise(
+    mean = mean(predicted.meanY)
+  )
+
 summary(nhefs$predicted.meanY[nhefs$cens == 0])
 
 summary(nhefs$wt82_71[nhefs$cens == 0])
 
 # Program 13.2: Stanardizing the mean outcome to the baseline confounders ----
+
+#... Data ----
+
+# Names/IDs 
 
 id <- c(
   "Rheia",
@@ -96,17 +101,18 @@ id <- c(
   "Hebe",
   "Dionysus"
 )
-N <- length(id)
-L <- c(0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-A <- c(0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-Y <- c(0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0)
+
+N <- length(id) # Number of observations (1 per patient)
+L <- c(0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1) # covariate L
+A <- c(0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1) # treatment A 
+Y <- c(0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0) # outcome
 interv <- rep(-1, N)
 observed <- cbind(L, A, Y, interv)
 untreated <- cbind(L, rep(0, N), rep(NA, N), rep(0, N))
 treated <- cbind(L, rep(1, N), rep(NA, N), rep(1, N))
 table22 <- as.data.frame(rbind(observed, untreated, treated))
 table22$id <- rep(id, 3)
-
+table22 %>% count(interv)
 glm.obj <- glm(Y ~ A * L, data = table22)
 summary(glm.obj)
 
