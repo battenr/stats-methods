@@ -22,9 +22,9 @@ library(Hmisc)
 
 nhefs <- readr::read_csv("data/nhefs.csv")
 
-# Pre-Processing Data ----
+# Pre-Processing Data ----(
 
-nhefs$cens <- ifelse(is.na(nhefs$wt82), 1, 0)
+nhefs$cens <- ifelse(is.na(nhefs$wt82), 1, 0) # if missing, then make wt82 1
 
 # Describing the Data ----
 
@@ -32,68 +32,23 @@ Hmisc::describe(nhefs$wt82_71)
 
 # Program 14.1 IP weighting ----
 
+# Estimaing denominator of IP weights for censoring. Limiting to just when censoring = 0
 
-## nhefs$wt82_71 
-##        n  missing distinct     Info     Mean      Gmd      .05      .10 
-##     1566       63     1510        1    2.638    8.337   -9.752   -6.292 
-##      .25      .50      .75      .90      .95 
-##   -1.478    2.604    6.690   11.117   14.739 
-## 
-## lowest : -41.28047 -30.50192 -30.05007 -29.02579 -25.97056
-## highest:  34.01780  36.96925  37.65051  47.51130  48.53839
-
-# estimation of denominator of ip weights for C
 cw.denom <- glm(cens==0 ~ qsmk + sex + race + age + I(age^2) 
                 + as.factor(education) + smokeintensity + I(smokeintensity^2) 
                 + smokeyrs + I(smokeyrs^2) + as.factor(exercise) 
                 + as.factor(active) + wt71 + I(wt71^2), 
                 data = nhefs, family = binomial("logit"))
-summary(cw.denom)
-## 
-## Call:
-## glm(formula = cens == 0 ~ qsmk + sex + race + age + I(age^2) + 
-##     as.factor(education) + smokeintensity + I(smokeintensity^2) + 
-##     smokeyrs + I(smokeyrs^2) + as.factor(exercise) + as.factor(active) + 
-##     wt71 + I(wt71^2), family = binomial("logit"), data = nhefs)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.9959   0.1571   0.2069   0.2868   1.0967  
-## 
-## Coefficients:
-##                         Estimate Std. Error z value Pr(>|z|)   
-## (Intercept)           -4.0144661  2.5761058  -1.558  0.11915   
-## qsmk                  -0.5168674  0.2877162  -1.796  0.07242 . 
-## sex                   -0.0573131  0.3302775  -0.174  0.86223   
-## race                   0.0122715  0.4524887   0.027  0.97836   
-## age                    0.2697293  0.1174647   2.296  0.02166 * 
-## I(age^2)              -0.0028837  0.0011135  -2.590  0.00961 **
-## as.factor(education)2  0.4407884  0.4193993   1.051  0.29326   
-## as.factor(education)3  0.1646881  0.3705471   0.444  0.65672   
-## as.factor(education)4 -0.1384470  0.5697969  -0.243  0.80802   
-## as.factor(education)5  0.3823818  0.5601808   0.683  0.49486   
-## smokeintensity        -0.0157119  0.0347319  -0.452  0.65100   
-## I(smokeintensity^2)    0.0001133  0.0006058   0.187  0.85171   
-## smokeyrs              -0.0785973  0.0749576  -1.049  0.29438   
-## I(smokeyrs^2)          0.0005569  0.0010318   0.540  0.58938   
-## as.factor(exercise)1   0.9714714  0.3878101   2.505  0.01224 * 
-## as.factor(exercise)2   0.5839890  0.3723133   1.569  0.11675   
-## as.factor(active)1     0.2474785  0.3254548   0.760  0.44701   
-## as.factor(active)2    -0.7065829  0.3964577  -1.782  0.07471 . 
-## wt71                   0.0878871  0.0400115   2.197  0.02805 * 
-## I(wt71^2)             -0.0006351  0.0002257  -2.813  0.00490 **
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 533.36  on 1628  degrees of freedom
-## Residual deviance: 465.36  on 1609  degrees of freedom
-## AIC: 505.36
-## 
-## Number of Fisher Scoring iterations: 7
+
+# Can check output of model with: summary(cw.denom)
+
+# Using model from above to predict censoring 
+
+
+
 nhefs$pd.c <- predict(cw.denom, nhefs, type="response")
 nhefs$wc <- ifelse(nhefs$cens==0, 1/nhefs$pd.c, NA) 
+
 # observations with cens=1 only contribute to censoring models
 
 
