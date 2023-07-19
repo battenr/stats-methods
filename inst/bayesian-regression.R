@@ -1,2 +1,0 @@
-# Learning about Bayesian Regression
-

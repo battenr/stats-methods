@@ -89,6 +89,8 @@ generate_data <- function(n){
     weights = w_unstab
   )
   
+  
+  
   glm.stab <- glm(
     as.formula(y ~ x + z), 
     family = gaussian(link = "identity"), 
@@ -169,6 +171,9 @@ calculate_mse(df.out, "coeff_stab", beta = 0.3, nsims = 1000)
 
 #... Coverage ----
 
+calculate_coverage <- function(df, 
+                               )
+
 
 
 
@@ -177,5 +182,5 @@ calculate_mse(df.out, "coeff_stab", beta = 0.3, nsims = 1000)
 
 #... Statistical Efficiency ----
 
-#... 
+ 
 
