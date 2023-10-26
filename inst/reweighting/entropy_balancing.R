@@ -6,13 +6,26 @@
 # Setup ----
 
 library(tidyverse)
-library(simstudy)
-library(ebal)
+#ibrary(simstudy)
+#library(ebal)
 library(WeightIt)
 
 #... Libraries ----
 
 #... Dependencies ----
+
+# Understanding Entropy Balancing ----
+
+#...Simulating Data ----
+
+# For now using one confounder for simplicity. Goal is to understand how entropy
+# balancing works 
+
+
+# Comparing IP W and Entropy Balancing ----
+
+
+
 
 # Simulating data for binary outcome (ORR) ----
 

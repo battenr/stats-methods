@@ -33,6 +33,9 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 #... Entropy Balancing ----
 
 
+# Code from the Paper ----
+
+
 ###############################################################################
 # Equivalence of entropy balancing and the method of moments for 
 # matching-adjusted indirect comparison

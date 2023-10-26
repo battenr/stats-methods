@@ -226,6 +226,87 @@ df.out <- do.call(rbind, output_list)
 mean(df.out$robust_result) # 0.884 
 mean(df.out$boot_result, na.rm = TRUE) # 0.8186
 
-unique(df.out$boot_result)
-
 # So there is less coverage with bootstrapping when using IPTW with a single confounder 
+
+# Doubly Robust ----
+
+ipw_var <- function(beta, # beta for x 
+                    n.sim # sample size
+){
+  
+  # Data 
+  
+  c = rnorm(n.sim, mean = 3, sd = 1)
+  x = rbinom(n.sim, size = 1, prob = plogis(c))
+  y = beta*x + c + rnorm(n.sim, mean = 0, sd = 1) # adding error term with rnorm
+  
+  df = data.frame(
+    x, y, c
+  )
+  
+  # IPW using PS
+  
+  df.ipw <- ipw_stab(df, x, c) # stabilized weights 
+  
+  # Outcome model, fit with weights and x only (i.e., not doubly robust)
+  
+  mod <- glm(y ~ x + c, 
+             data = df.ipw, 
+             weights = weights)
+  
+  # Robust Variance Estimator 
+  
+  robust_se <- sqrt(diag(sandwich::vcovHC(mod, type = "HC3")))[2]
+  
+  # Bootstrap
+  
+  #... Define function to obtain coefficient of interest from glm model
+  get_coef <- function(formula, data, indices) {
+    fit <- glm(formula, data = data[indices, ])
+    return(coef(fit)[2])
+  }
+  
+  #... Get Bootstrapped Estimates
+  
+  results <- boot(data = df.ipw, statistic = get_coef, R = 100, # would use 1000 but takes too long in this case
+                  formula = y ~ x)
+  
+  #... Estimating SE
+  
+  boot_se <- sd(results$t)
+  
+  # Coverage 
+  
+  #... Robust 95% CIs
+  
+  robust_lower_ci <- coef(mod)[2] - 1.96*robust_se
+  robust_upper_ci <- coef(mod)[2] + 1.96*robust_se
+  
+  #... Bootstrap 95% CIs
+  
+  boot_lower_ci <- coef(mod)[2] - 1.96*boot_se
+  boot_upper_ci <- coef(mod)[2] + 1.96*boot_se
+  
+  robust_result <- as.logical(robust_lower_ci <= beta) & as.logical(beta <= robust_upper_ci)
+  boot_result <- as.logical(boot_lower_ci <= beta) & as.logical(beta <= boot_upper_ci)
+  
+  robust_boot = data.frame(
+    robust_result, 
+    boot_result
+  )
+  
+  return(robust_boot)
+  
+}
+
+output_list <- replicate(1000, ipw_var(beta = 0.3, n.sim = 216), simplify = FALSE)
+
+# Bind all data frames in the list into a single data frame
+df.out <- do.call(rbind, output_list)
+
+mean(df.out$robust_result) # 0.884 
+mean(df.out$boot_result, na.rm = TRUE) # 0.8186
+
+# 1 Confounder & 1 Prongostic Factor ----
+
+# 2 Confounders 
