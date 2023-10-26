@@ -11,6 +11,9 @@ library(tidyverse)
 library(ggdag)
 theme_set(theme_dag())
 
+# DO MORE READING. THINK THIS COULD BE M-BIAS or IV methods could help here since a/b are 
+# instrumental variables
+
 #... Functions ----
 
 # Load all functions
