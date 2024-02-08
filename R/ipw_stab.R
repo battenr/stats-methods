@@ -6,7 +6,7 @@
 #' for the denominator
 #' The weights are used to adjust for confounding in observational studies.
 #'
-#' @param df A data frame containing the variables of interest. 
+#' @param data A data frame containing the variables of interest. 
 #' @param treat A character string specifying the treatment variable in the dataset.
 #' @param confounder A character string specifying the confounder variable in the dataset.
 #' 
@@ -24,27 +24,33 @@
 #'                    confounder = c(1, 2, 1, 2, 3))
 #' ipw_stab(data, "treat", "confounder")
 #' }
-ipw_stab <- function(df, treat, confounder){
+ipw_stab <- function(data, treat, confounders){
   
   library(tidyverse)
   
-  mod.conditional <- glm(as.formula(treat~confounder), 
+  # Adding confounder_formula and formula_conditional so that muultiple confounders can be 
+  # passed (not just 1)
+  
+  confounder_formula <- paste(confounders, collapse = " + ")
+  formula_conditional <- as.formula(paste(treat, "~", confounder_formula))
+  
+  mod.conditional <- glm(formula_conditional, 
                          family = binomial(link = "logit"),
-                         data = df)
+                         data = data)
   
   mod.marginal <- glm(as.formula(treat~1), 
                       family = binomial(link = "logit"),
-                      data = df)
-  df = df |> 
+                      data = data)
+  data = data |> 
     dplyr::mutate(
       ps.conditional = predict(mod.conditional, type = "response"),
       ps.marginal = predict(mod.marginal, type = "response"),
       weights = dplyr::case_when(
-        x == 1 ~ ps.marginal/ps.conditional, 
-        x == 0 ~ (1-ps.marginal)/(1-ps.conditional)
+        treat == 1 ~ ps.marginal/ps.conditional, 
+        treat == 0 ~ (1-ps.marginal)/(1-ps.conditional)
       )
     )
   
-  return(df)
+  return(data)
   
 }
