@@ -36,6 +36,12 @@ mod <- glm(outcome ~ age + sex,
            family = binomial, 
            data = df)
 
+library(broom)
+
+augment(mod)
+
+?augment
+
 df.updated = df %>% 
   dplyr::mutate(
     pi_pred = predict(mod, type = "response"),
