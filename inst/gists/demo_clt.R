@@ -1,4 +1,4 @@
-# Title: Demostration of the Central Limit Theorem
+# Title: Demonstration of the Central Limit Theorem
 
 # Description: The purpose of this script is to simulate data for three different 
 # distributions (normal, logistic and poisson) for four different sample sizes. 
