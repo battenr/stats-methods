@@ -1,6 +1,12 @@
 # Title: LMS Method for Adjusted Z-scores. 
 
-# Description
+# Description: Using the LMS method proposed by Cole & Green (1990). 
+# The data source for this is from the NHANES 2017-2018 survey. The goal was to 
+# be able to calculate height-adjusted Z-scores based on the measure. To do that, 
+# a model is fit which can then be used to get L, M and S for values. 
+
+# I used the gamlss pacakge to do this. Instead of using the lms function, 
+# I used the gamlss() function. 
 
 # Setup ----
 
@@ -9,7 +15,7 @@
 library(tidyverse)
 library(haven)
 library(janitor)
-library(gamlss)
+library(gamlss) # for fitting the model 
 
 #... Loading Data ----
 
@@ -27,6 +33,8 @@ dxx <- haven::read_xpt("data/DXXSPN_J.XPT") %>%
 
 # Reformatting NHANES Data ----
 
+# Select patient ID and weights from the demographics dataset 
+
 id_wghts <- demo %>% 
   select(
     seqn,
@@ -37,6 +45,8 @@ id_wghts <- demo %>%
     wght = wtmec2yr
   )
 
+# Selecting height (bmxht) 
+
 height <- bmx %>% 
   select(
     seqn, 
@@ -46,6 +56,8 @@ height <- bmx %>%
     id = seqn, 
     ht = bmxht
   )
+
+# Joining the different components together 
 
 df <- dxx %>% 
   rename(id = seqn) %>% 
@@ -60,109 +72,96 @@ df <- dxx %>%
 
 # Fitting a GLMSS ----
 
-# Using the LMS method proposed by COle & Green
+# This part required a bit of tinkering. Few notes below: 
 
-dxx$dxxosbmd
+# - Based on the LMS method proposed by Cole & Green (1990). 
 
-df$wght
+# - Removed missing values. Doing this is an assumption that removing the 
+# missing values won't affect the weights too much. Alternatively, 
+# the weights can be inflated. For now, I just removed them 
 
-summary(df$wght)
-mean(df$wght)
+# - The weights are inflation/expansion weights. This is an assumption based on 
+# the summary statistics of the weights. These will "wreck havoc" on the 
+# regression model. Due to this, analytic weights are often used by dividing the 
+# inflation weights by the mean of the inflation weights. This scales them down
 
-df$dxxos
+# Using the LMS method proposed by Cole & Green
+
+#... Getting Data Ready for Model ----
 
 test = df %>% 
+  
+  # Calculating the analytic weights 
+  
   mutate(wghta = wght/mean(df$wght)) %>% 
-  select(id, dxxosbmd, ht, wghta) %>% 
+  
+  # Selecting the DXA measurement. There are limited values available. For now, 
+  # I tried using the "overall spine" category. 
+  
+  select(id, dxxosbmd, dxxosa, ht, wghta) %>% 
+  
+  # Removing missing values 
+  
   na.omit() %>% 
-  rename(y = dxxosbmd)
+  
+  # This was 
+  mutate(y = (dxxosbmd / dxxosa)*100, 
+         height = round(ht), # rounding the height. This seemed to make a difference. 
+         # before doing this, the model wouldn't fit. 
+         
+         yd = round(dxxosbmd, 2),
+         
+         y2 = exp(dxxosbmd)) 
 
-summary(test$wghta)
 
-rm(mod_lms)
+#... Fitting the Model ----
 
-?lms
+# This was after trying several iterations. 
 
-
-mod_lms <- gamlss::lms(y = dxxosbmd,
-                       x = ht, 
-                       data = test,
-                       #weights = wghta,
-                       family = BCT,
-                       trans.x = TRUE
+mod_simple <- gamlss(
+  yd ~ height,  # formula
+  data = test,  # data. The name of the dataframe isn't really right
+  family = BCCG,  # distribution. BCCG is "Box-Cox Cole Green"
+  sigma.formula = ~height, # if you don't do this sigma will be constant
+  nu.formula = ~height, # same as the comment above for sigmas
+  weight = wghta # analytic weights 
+  #control = gamlss.control(n.cyc = 100, optim.method = "BFGS") # this works 
 )
 
-mod_lms <- gamlss::gamlss(dxxosbmd ~ pb(ht), 
-                          weights = wghta,
-                          data = test,
-                          family = BCT
-)
+# Diagnostic Plots ----
 
+plot(mod_simple)
 
+# Predicting L M & S for Height ----
 
-
-
+#... New Data. From the minimum available to the max available. 
 
 new_df <- data.frame(
-  ht = seq(from = 115, 
-           to = 195, 
-           by = 1
-           )
+  height = seq(from = 138, to = 196, by =0.5)
 )
 
-gamlss::predictAll(mod_lms, newdata = new_df, output = "data.frame")
+# Predicting the Values 
 
-summary(mod_lms)
-
-lms <- gamlss::predictAll(mod_lms, newdata = new_df, output = "data.frame") %>% 
-  cbind(new_df) %>% 
+predictAll(mod_simple, 
+           output = "data.frame",
+           newdata = new_df
+           ) %>% 
+  cbind(new_df$height) %>% 
   rename(
     L = nu, 
     M = mu, 
     S = sigma
-  )
+  ) %>% view()
 
-# Measurement 
-
+# Test Calculation ----
 
 # Test calculation for Z-score. 
 
-# BMD for spine was 0.898 
-
 # Height was 160 and BMD was 1.136
 
-# Calculating Z-score
+((1.136/0.962)^(0.525) - 1)/(0.524*0.161)
 
-lms %>% filter(ht == 160)
-
-(((1.136/0.964)^(0.5195)) - 1)/(0.51958*0.161)
-
-# Z score of 1.06. This is compared to the Z-socre of 1.70 not adjusting for height. 
-# Seems reasonable on the surface but needs to be checked further. 
-
-
-# Picking a person with the measurement for BMD for head
-
-
-?predictAll()
-
-?predictAll
-
-unique(test$ht) %>% sort()
-
-
-
-summary(mod_lms)
-
-gamlss
-
-data(db)
-
-# Incorporating Sample Weights ----
-
-
-
-
+# 1.08 Z score but was originally 1.70. 
 
 
 
