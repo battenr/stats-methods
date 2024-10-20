@@ -41,8 +41,7 @@ bayes_mod <- brm(
 # Checking how model compares to the model used for the frequentist versinon. G-formula
 
 tidy(mod)
-tidy(bayes_mod)
-
+bayes_mod
 
 # Posterior predictive samples for Y under X = 1 and X = 0
 Y_X1_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 1, l1 = df$l1, l2 = df$l2))
@@ -52,188 +51,105 @@ Y_X0_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 0, l1 = df$l
 median(rowMeans(Y_X1_samples - Y_X0_samples))
 quantile(rowMeans(Y_X1_samples - Y_X0_samples), c(0.025, 0.975))
 
+mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect 
+
+# Similar Result to Outcome Model but more accurate/in line with IPTW b/c we're drawing 
+# from the predictive posterior distribution rather than having to bootstrap. 
+
 # Median: 0.231 95% CI: -0.0232 to 0.486
 
 # this compares to out model that we got before. Not to our result after 
 
-# Using 
-
-# Using Strong Prior for one of them ----
-
-# Fit a Bayesian linear model with weak 
+# Assuming Some Information ----
 
 bayes_mod <- brm(
   y ~ x + l1 +l2, 
   data = df,
   family = gaussian(),
   prior = c(
-    prior(normal(0, 10), class = "b", coef = "x"), # flat prior for X
+    prior(normal(0, 2.5), class = "b", coef = "x"), # flat prior for X
     prior(normal(0, 2.5), class = "b", coef = "l1"), # flat prior for l1
-    prior(normal(1, 2.5), class = "b", coef = "l2") # overly strong
+    prior(normal(1, 2.5), class = "b", coef = "l2")
   ),
   iter = 4000, 
   chains = 4
-)
+) 
 
 # Checking how model compares to the model used for the frequentist versinon. G-formula
 
 tidy(mod)
 bayes_mod
 
+# Posterior predictive samples for Y under X = 1 and X = 0
 Y_X1_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 1, l1 = df$l1, l2 = df$l2))
 Y_X0_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 0, l1 = df$l1, l2 = df$l2))
 
-# Posterior predictive samples for Y under X = 1 and X = 0
+# Estimate the risk difference (Average Treatment Effect) by averaging posterior draws
 median(rowMeans(Y_X1_samples - Y_X0_samples))
 quantile(rowMeans(Y_X1_samples - Y_X0_samples), c(0.025, 0.975))
 
-# Slight improvement 
+mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect 
 
-# Using Same Prior for Both ----
+# Too Strong for L2 ----
 
 bayes_mod <- brm(
   y ~ x + l1 +l2, 
   data = df,
   family = gaussian(),
   prior = c(
-    prior(normal(0, 10), class = "b", coef = "x"), # flat prior for X
-    prior(normal(1, 2.5), class = "b", coef = "l1"), # flat prior for l1
-    prior(normal(1, 2.5), class = "b", coef = "l2") # overly strong
+    prior(normal(0, 2.5), class = "b", coef = "x"), # flat prior for X
+    prior(normal(0, 2.5), class = "b", coef = "l1"), # flat prior for l1
+    prior(normal(2, 1), class = "b", coef = "l2")
   ),
   iter = 4000, 
   chains = 4
-)
+) 
 
+# Checking how model compares to the model used for the frequentist versinon. G-formula
+
+tidy(mod)
+bayes_mod
+
+# Posterior predictive samples for Y under X = 1 and X = 0
 Y_X1_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 1, l1 = df$l1, l2 = df$l2))
 Y_X0_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 0, l1 = df$l1, l2 = df$l2))
 
-# Posterior predictive samples for Y under X = 1 and X = 0
+# Estimate the risk difference (Average Treatment Effect) by averaging posterior draws
 median(rowMeans(Y_X1_samples - Y_X0_samples))
 quantile(rowMeans(Y_X1_samples - Y_X0_samples), c(0.025, 0.975))
 
+mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect 
 
-# Using Overly Strong Prior for both ----
-
+# Too Weak for L2 ----
 
 bayes_mod <- brm(
   y ~ x + l1 +l2, 
   data = df,
   family = gaussian(),
   prior = c(
-    prior(normal(0, 10), class = "b", coef = "x"), # flat prior for X
-    prior(normal(1, 1), class = "b", coef = "l1"), # flat prior for l1
-    prior(normal(1, 1), class = "b", coef = "l2") # overly strong
+    prior(normal(0, 2.5), class = "b", coef = "x"), # flat prior for X
+    prior(normal(0, 2.5), class = "b", coef = "l1"), # flat prior for l1
+    prior(normal(0, 1), class = "b", coef = "l2")
   ),
   iter = 4000, 
   chains = 4
-)
+) 
 
+# Checking how model compares to the model used for the frequentist versinon. G-formula
+
+tidy(mod)
+bayes_mod
+
+# Posterior predictive samples for Y under X = 1 and X = 0
 Y_X1_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 1, l1 = df$l1, l2 = df$l2))
 Y_X0_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 0, l1 = df$l1, l2 = df$l2))
 
-# Posterior predictive samples for Y under X = 1 and X = 0
+# Estimate the risk difference (Average Treatment Effect) by averaging posterior draws
 median(rowMeans(Y_X1_samples - Y_X0_samples))
 quantile(rowMeans(Y_X1_samples - Y_X0_samples), c(0.025, 0.975))
 
-?posterior_epred()
+mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect 
 
-# Plots! ----
-
-draws <- bayes_mod %>% 
-  epred_draws(newdata = df)
-
-draws_y1 <- data.frame(
-  y1 = rowMeans(Y_X1_samples)
-)
-
-draws_y0 <- data.frame(
-  y0 = rowMeans(Y_X0_samples)
-)
-
-draws <- cbind(draws_y1, draws_y0) %>% 
-  mutate(effect = y1-y0) %>% 
-  tidyr::pivot_longer(
-    everything(), 
-    names_to = "outcome"
-  ) 
-
-draws %>% 
-  filter(outcome != "effect") %>% 
-  ggplot(aes(x = value, y = outcome, fill = as.factor(outcome))) +
-  stat_halfeye(color = "purple", fill = "lightpink", point_interval = NULL) + 
-  labs(x = "Y", y = "Treatment Group") +
-  scale_y_discrete(labels = c(y0 = "X = 0", y1 = "X = 1")) +
-  theme_minimal() + 
-  theme(text = element_text(size = 20),
-        legend.position = "none",
-        plot.title = element_text(hjust = 0.5, face = "bold"),
-        plot.subtitle = element_text(hjust = 0.5)
-  ) +
-  ggtitle("Potential Outcomes", 
-          subtitle = "Draws of Expected Value from the Posterior Distribution")  
-
-
-# Forest Plot ----
-
-library(ggdist)
-library(brms)
-
-priors = c(
-  prior(normal(1, 10), class = b),
-  prior(normal(0, 2.5), class = b)
-  # lb = 0 sets a lower bound of 0, i.e. a half-Normal distribution
-)
-
-priors
-
-?parse_dist
-
-priors %>% 
-  parse_dist(prior) %>% 
-  ggplot(aes(y = prior, xdist = .dist_obj)) +
-  stat_halfeye() +
-  scale_y_discrete(labels = c("b ~ norm(1, 10)", 
-                                         "b ~ norm(0, 2.5)"))
-
-?stat_halfeye
-
-# TESTING----
-
-library(ggdist)
-library(dplyr)
-library(ggplot2)
-
-# Sample priors data (you would replace this with your actual priors)
-priors <- data.frame(
-  prior = c("normal(1, 10)", "normal(0, 2.5)"),
-  class = c("b", "b")
-)
-
-# Parse distribution objects
-priors <- priors %>%
-  mutate(.dist_obj = case_when(
-    prior == "normal(1, 10)" ~ dist_normal(1, 10),
-    prior == "normal(0, 2.5)" ~ dist_normal(0, 2.5)
-  ))
-
-# Create a cleaned y-label column for easier plotting
-priors <- priors %>%
-  mutate(prior_label = factor(prior, levels = prior))
-
-# Plot with ggdist and correct y-axis labels
-priors %>% 
-  ggplot(aes(y = prior_label, xdist = .dist_obj)) +
-  stat_halfeye() +
-  scale_y_discrete(labels = c(
-    "normal(1, 10)" = "b ~ norm(1, 10)",
-    "normal(0, 2.5)" = "b ~ norm(0, 2.5)"
-  )) +
-  labs(
-    title = "Priors Visualization",
-    subtitle = "Custom Y-axis Labels",
-    x = "Value",
-    y = "Priors"
-  )
 
 
 

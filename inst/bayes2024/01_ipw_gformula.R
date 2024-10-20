@@ -150,3 +150,8 @@ finalresults <- data.frame(
 
 finalresults 
 
+tidy(out.mod)
+
+mod
+
+
