@@ -5,18 +5,7 @@
 
 # Fit a Bayesian linear model with weak priors
 
-bayes_mod <- brm(
-  y ~ x + l1 +l2, 
-  data = df,
-  family = gaussian(),
-  prior = c(
-    prior(normal(0, 10), class = "b", coef = "x"), # flat prior for X
-    prior(normal(0, 10), class = "b", coef = "l1"), # flat prior for l1
-    prior(normal(0, 10), class = "b", coef = "l2")
-  ),
-  iter = 4000, 
-  chains = 4
-)
+bayes_mod # object from 02_bayes_gformula.R
 
 
 # Plots! ----
@@ -44,7 +33,7 @@ draws <- cbind(draws_y1, draws_y0) %>%
 draws %>% 
   filter(outcome != "effect") %>% 
   ggplot(aes(x = value, y = outcome, fill = as.factor(outcome))) +
-  stat_halfeye(color = "purple", fill = "lightpink", point_interval = NULL) + 
+  stat_halfeye(color = "#C32048", fill = "lightpink", point_interval = "mean_qi", size = 12) + 
   labs(x = "Y", y = "Treatment Group") +
   scale_y_discrete(labels = c(y0 = "X = 0", y1 = "X = 1")) +
   theme_minimal() + 
@@ -54,7 +43,8 @@ draws %>%
         plot.subtitle = element_text(hjust = 0.5)
   ) +
   ggtitle("Potential Outcomes", 
-          subtitle = "Draws of Expected Value from the Posterior Distribution")  
+          subtitle = "Draws of Expected Value from the Posterior Predictive Distribution")  +
+  lims(x = c(2.5, 4.5))
 
 draws %>% 
   filter(outcome == "effect") %>% 
@@ -68,12 +58,14 @@ draws %>%
     IQR = q3-q1
   )
 
+
+
 draws %>% 
   filter(outcome == "effect") %>% 
   ggplot(aes(x = value, y = outcome, fill = as.factor(outcome))) +
-  stat_halfeye(color = "purple", fill = "lightpink") + 
+  stat_halfeye(color = "#C32048", fill = "lightpink", point_interval = "mean_qi", size = 12) + 
   labs(x = "Y", y = "") +
-  scale_y_discrete(labels = c(y0 = "X = 0", y1 = "X = 1")) +
+  scale_y_discrete(labels = c(effect = "")) +
   theme_minimal() + 
   theme(text = element_text(size = 20),
         legend.position = "none",
@@ -81,11 +73,6 @@ draws %>%
         plot.subtitle = element_text(hjust = 0.5)
   ) +
   ggtitle("Treatment Effect", 
-          subtitle = "Draws of Expected Value from the Posterior Distribution") +
-  geom_text(aes(x = 0.134, y = "effect"), 
-            label = "0.134", 
-            color = "purple", 
-            size = 5, 
-            vjust = 1.5) 
-
+          subtitle = "Draws of Expected Value from the Posterior Predictive Distribution") +
+  lims(x = c(-1, 1))
 

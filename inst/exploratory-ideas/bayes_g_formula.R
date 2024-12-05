@@ -7,6 +7,19 @@
 
 # Could we use Bayesian PS using a prior for the confounder 
 
+# General thoughts: 
+# 1. can use as a sensitivity to assess the impact of residual confounding
+# 2. we often know some information about the confounder relationship
+# 3. We can try and "triangulate" this. It isn't guaranteed that the 
+# confounder has to have the same relationship with X & Y (i.e., could be 
+# non-linear with X and linear with Y)
+# 4. Combining STC & PS could solve this. (my holy shit moment)
+# New idea: what if - you fit a PS model, then use this PS in the model 
+# and the weights. Not sure if any different than doubly robust but we 
+# could include some priors 
+
+
+
 library(tidyverse)
 library(brms)
 
@@ -33,6 +46,8 @@ mod <- brms::brm(y ~ trt + c1,
                     coef = "c1"))
 
 mod %>% brms::posterior_predict() 
+
+# Could we somehow show residual confounding
 
 # Predicting ----
 

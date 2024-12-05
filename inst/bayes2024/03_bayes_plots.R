@@ -5,6 +5,8 @@
 
 # This particular script focuses on outputting plots from the previous scripts. 
 
+# Note: this script needs to be run before all the others 
+
 # Scenario 1: Weak prior 
 # Scenario 2: Informative prior
 # Scenario 3: Overly strong prior
@@ -23,21 +25,21 @@ library(distributional)
 
 # Function for Plotting Priors ----
 
-plot_priors <- function(df_priors, subtext){
+plot_priors <- function(df_priors, titletext, subtext){
   
   priors %>%
     parse_dist(prior) %>%
     
-    ggplot(aes(y = paste("For", coef, ":", " ", class, "~", format(.dist_obj)), xdist = .dist_obj)) +
-    stat_halfeye(subguide = subguide_inside(position = "right", title = "density"), color = "purple", fill = "pink") +
+    ggplot(aes(y = paste(coef, ":", class, "~", format(.dist_obj)), xdist = .dist_obj)) +
+    stat_halfeye(color = "#C32048", fill = "#C32048", point_interval = NULL) +
     labs(
-      title = "Prior Distributions",
+      title = titletext,
       subtitle = subtext,
       x = NULL,
       y = NULL
     ) + 
     theme_minimal() +
-    theme(text = element_text(hjust = 0.5, size = 20),
+    theme(text = element_text(hjust = 0.5, size = 24),
           plot.title = element_text(hjust = 0.5, face = "bold"), 
           plot.subtitle = element_text(hjust = 0.5)
     )
@@ -56,28 +58,17 @@ priors = c(
   prior(normal(0, 10), class = b, coef = "L2")
 )
 
-plot_priors(priors, "Weak Priors")
-
-#... Assuming Some Information ----
-
-priors = c(
-  prior(normal(0, 2.5), class = "b", coef = "x"), # flat prior for X
-  prior(normal(1, 2.5), class = "b", coef = "l1"), # flat prior for l1
-  prior(normal(1, 1), class = "b", coef = "l2")
-)
-
-
-plot_priors(priors, "Some Information")
+plot_priors(priors, "Weak Priors", "")
 
 # Too Strong for L2 ----
 
 priors = c(
   prior(normal(0, 2.5), class = b, coef = "X"),
   prior(normal(0, 2.5), class = b, coef = "L1"), 
-  prior(normal(2, 1), class = b, coef = "L2")
+  prior(normal(4, 1), class = b, coef = "L2")
 )
 
-plot_priors(priors, "Strong Priors")
+p1 <- plot_priors(priors, "Assuming Too Strong Effect for L2", "")
 
 
 # Too Weak for L2 ----
@@ -88,5 +79,12 @@ priors = c(
   prior(normal(0, 1), class = b, coef = "L2")
 )
 
-plot_priors(priors, "Too Weak for L2")
+p2 <- plot_priors(priors, "Assuming Too Weak Effect for L2", "")
 
+library(patchwork)
+
+p1/p2
+
+
+  
+  

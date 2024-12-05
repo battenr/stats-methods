@@ -12,7 +12,7 @@
 
 # Setup ----
 
-source("inst/bayes2024/00_simulating_data.R") # only need to run this once. 
+#source("inst/bayes2024/00_simulating_data.R") # only need to run this once. 
 library(brms)
 library(tidybayes)
 
@@ -60,36 +60,6 @@ mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect
 
 # this compares to out model that we got before. Not to our result after 
 
-# Assuming Some Information ----
-
-bayes_mod <- brm(
-  y ~ x + l1 +l2, 
-  data = df,
-  family = gaussian(),
-  prior = c(
-    prior(normal(0, 2.5), class = "b", coef = "x"), # flat prior for X
-    prior(normal(0, 2.5), class = "b", coef = "l1"), # flat prior for l1
-    prior(normal(1, 2.5), class = "b", coef = "l2")
-  ),
-  iter = 4000, 
-  chains = 4
-) 
-
-# Checking how model compares to the model used for the frequentist versinon. G-formula
-
-tidy(mod)
-bayes_mod
-
-# Posterior predictive samples for Y under X = 1 and X = 0
-Y_X1_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 1, l1 = df$l1, l2 = df$l2))
-Y_X0_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 0, l1 = df$l1, l2 = df$l2))
-
-# Estimate the risk difference (Average Treatment Effect) by averaging posterior draws
-median(rowMeans(Y_X1_samples - Y_X0_samples))
-quantile(rowMeans(Y_X1_samples - Y_X0_samples), c(0.025, 0.975))
-
-mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect 
-
 # Too Strong for L2 ----
 
 bayes_mod <- brm(
@@ -99,26 +69,22 @@ bayes_mod <- brm(
   prior = c(
     prior(normal(0, 2.5), class = "b", coef = "x"), # flat prior for X
     prior(normal(0, 2.5), class = "b", coef = "l1"), # flat prior for l1
-    prior(normal(2, 1), class = "b", coef = "l2")
+    prior(normal(4, 1), class = "b", coef = "l2")
   ),
   iter = 4000, 
   chains = 4
 ) 
 
-# Checking how model compares to the model used for the frequentist versinon. G-formula
-
-tidy(mod)
-bayes_mod
-
 # Posterior predictive samples for Y under X = 1 and X = 0
 Y_X1_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 1, l1 = df$l1, l2 = df$l2))
 Y_X0_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 0, l1 = df$l1, l2 = df$l2))
 
-# Estimate the risk difference (Average Treatment Effect) by averaging posterior draws
-median(rowMeans(Y_X1_samples - Y_X0_samples))
-quantile(rowMeans(Y_X1_samples - Y_X0_samples), c(0.025, 0.975))
-
-mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect 
+toostrongbayes <- data.frame(
+  prior = "Too Strong for L2", 
+  effect = mean(rowMeans(Y_X1_samples - Y_X0_samples)),
+  lowerci = quantile(rowMeans(Y_X1_samples - Y_X0_samples), 0.025),
+  upperci = quantile(rowMeans(Y_X1_samples - Y_X0_samples), 0.975)
+)
 
 # Too Weak for L2 ----
 
@@ -135,22 +101,24 @@ bayes_mod <- brm(
   chains = 4
 ) 
 
-# Checking how model compares to the model used for the frequentist versinon. G-formula
-
-tidy(mod)
-bayes_mod
-
 # Posterior predictive samples for Y under X = 1 and X = 0
 Y_X1_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 1, l1 = df$l1, l2 = df$l2))
 Y_X0_samples <- posterior_epred(bayes_mod, newdata = data.frame(x = 0, l1 = df$l1, l2 = df$l2))
 
-# Estimate the risk difference (Average Treatment Effect) by averaging posterior draws
-median(rowMeans(Y_X1_samples - Y_X0_samples))
-quantile(rowMeans(Y_X1_samples - Y_X0_samples), c(0.025, 0.975))
+tooweakbayes <- data.frame(
+  prior = "Too Weak for L2", 
+  effect = mean(rowMeans(Y_X1_samples - Y_X0_samples)),
+  lowerci = quantile(rowMeans(Y_X1_samples - Y_X0_samples), 0.025),
+  upperci = quantile(rowMeans(Y_X1_samples - Y_X0_samples), 0.975)
+)
 
-mean(rowMeans(Y_X1_samples - Y_X0_samples)) # average treatment effect 
+# Both Scenarios ----
 
+allbayes <- toostrongbayes %>% 
+  full_join(tooweakbayes) 
 
+allbayes %>% 
+  mutate(across(where(is.numeric), ~round(.x, 3)))
 
 
 

@@ -42,3 +42,15 @@ vignettes/*.pdf
 
 *.csv
 *.xlsx
+
+inst/.DS_Store
+inst/comps/.DS_Store
+
+# Ignoring anything from bayes conference - this will be in a seperate bayes 2024 
+# project folder. 
+
+inst/exploratory-ideas/bayes*
+inst/bayes2024/
+
+inst/exploratory-ideas/exploratory-ideas.Rproj
+inst/exploratory-ideas/exploratory-ideas.Rproj
