@@ -1,13 +1,16 @@
-# Simulation Study with Bayesian Model 
+# Title: Simulation Study with Bayesian Models
 
-# This will be very helpful for understanding Bayesian Approaches
+# Description: Conducting simulation studies with a frequentist approach 
+# is somewhat more straightforward. The goal of this code is to 
+# help provide some code that can be used when exploring Bayesian 
+# approaches 
 
 # Library ----
 
-library(tidyverse)
-library(brms)
-library(tidybayes) # for working with bayes 
-library(bayesplot)
+library(tidyverse) # ol faithful
+library(brms) # Bayesian models
+library(tidybayes) # for working with bayes to make it tidier
+library(bayesplot) # for plotting results from Bayesian methods (i.e., posterior distribution)
 
 # Sample Code for Simulation ----
 
@@ -115,6 +118,8 @@ mean(dfbias$bias)
 sqrt(1/(n.sim*(n.sim -1)) * sum((dfbias$bias - mean(dfbias$bias))^2))
 
 0.0018 (0.0128)
+
+# Showing Priors and Posterior ----
 
 
 
