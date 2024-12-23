@@ -22,7 +22,7 @@ sim_data <- function(n = 250, # sample size
     dplyr::mutate(
       prob = plogis(z1_on_x*z1 + z2_on_x*z2), 
       x = rbinom(n = n, size = 1, prob = prob), 
-      y = beta_trt*x + z1_on_y*z1 + z2_on_y*z2
+      y = beta_trt*x + z1_on_y*z1 + z2_on_y*z2 + rnorm(n = n, mean = 0, sd = 1)
     )
   
   # Return the dataframe
