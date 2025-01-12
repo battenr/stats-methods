@@ -64,7 +64,9 @@ median_hdci(dfp$b_x) %>%
   lapply(\(x)round(x, 2)) %>% 
   as.data.frame()
 
-update_model <- function(){
+# Reusable Code ----
+
+update_model <- function(mod){
   
   # New Data Frame. 
   # New in this sense means that it's just been rerun 

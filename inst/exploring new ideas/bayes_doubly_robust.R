@@ -33,7 +33,7 @@ glm(y ~ x + z1 + z2,
 # Bayes Approach
 
 priors <- c(
-  prior(normal(0, 2), class = "b", coef = "x"),
+  prior(normal(2, 1), class = "b", coef = "x"),
   prior(normal(0, 2), class = "b", coef = "z1"), 
   prior(normal(0, 2), class = "b", coef = "z2")
 )
@@ -41,10 +41,13 @@ priors <- c(
 bform <- bf(y ~ x + z1 + z2) +
   bf(x ~ z1 + z2) + set_rescor(FALSE)
 
+
 bmod <- brms::brm(bform, 
                   data = df, 
                   family = gaussian(),
-                  prior = prior(normal(0,2)) # using same prior for all 
+                  prior = prior(normal(1,1)),# using same prior for all 
+                  chains = 2,
+                  iter = 1000
                   )
 
 
@@ -55,9 +58,18 @@ summary(bmod)
 #                            bmod, 
 #                            ndraws = 10)
 
+tidybayes::add_epred_draws(newdata = df %>% select(x, z1, z2), 
+                           bmod, 
+                           value = "b_y_x",
+                           ndraws = 10) %>% 
+  head() %>% view()
+
+marginaleffects::avg_comparisons(bmod)
+
+
 test2 = tidybayes::add_epred_draws(newdata = df %>% select(x, z1, z2), 
                            bmod, 
-                           value = "b_x",
+                           value = "b_y_x",
                            ndraws = 100)
 
 # 
@@ -66,16 +78,12 @@ test2 = tidybayes::add_epred_draws(newdata = df %>% select(x, z1, z2),
 #   stat_halfeye()
 
 ggplot(data = test2, 
-       mapping = aes(x = b_x)) +
+       mapping = aes(x = b_y_x)) +
   stat_halfeye()
 
 median_hdci(test2$b_x)
 
 0.689 (0.417 to 5.90) # this is wildly wrong. 
-
-?tidybayes::median_hdci()
-
-?median_hdci()
   
   
   geom_stat_halfeye()
