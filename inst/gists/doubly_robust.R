@@ -1,7 +1,8 @@
 # Title: Doubly Robust Estimation
 
 # Description: Demonstrating how doubly robust estimation can be 
-# a useful tool, but has limitations
+# a useful tool, but has limitations. Specifically by looking at three different 
+# scenarios and the resulting bias. 
 
 # This script has three examples: 
 # 1. Both models correctly specified
@@ -19,26 +20,9 @@
 
 library(tidyverse) # ol faithful
 library(WeightIt) # for estimating weights 
-library(broom)
+library(broom) # for tidying results
 
 #... Functions ----
-
-# Custom Theme 
-
-# This custom theme is used for the plots 
-
-custom_theme <- function() {
-  theme_minimal() %+replace% # basing this on the minimal theme with some adjustments
-    theme(
-      plot.title = element_text(hjust = 0.5, 
-                                family = "JostRoman-bold", 
-                                face = "bold", 
-                                size = 30),
-      #axis.title = element_text(family = "Jost Medium"),
-      plot.subtitle = element_text(hjust = 0.5, size = 24),
-      text = element_text(family = "Jost", size = 24)
-    ) 
-}
 
 # Simulating Data Function
 
@@ -76,20 +60,17 @@ set.seed (654) # setting seed for reproducibility
 
 df <- sim_data() # a dataset where there really is an effect
 
-# Situation 1: Both Models Correctly Specified ----
+# Scenario 1: Both Models Correctly Specified ----
 
 #... Fitting PS Model ----
 
 psmod1 <- WeightIt::weightit(x ~ z1 + z2, 
                              data = df, 
-                             estimand = "ATE",
-                             stabilize = TRUE)
+                             estimand = "ATE", # estimating the ATE
+                             stabilize = TRUE) # using stabilized weights
 
 #.... Fitting Outcome Model ----
 
-outmod <- glm(y ~ x, 
-              data= df, 
-              weights = psmod1$weights)
 
 outmod1 <- glm(y ~ x + z1 + z2, 
                data = df, 
@@ -125,124 +106,116 @@ scenario1 <- function(n = 250, beta_trt = 1.5){
 
 # Using the function we will repeat it 1000 times. 
 
-check_1000 <- replicate(1000, scenario1, simplify = FALSE)
+check_1000 <- replicate(1000, scenario1(), simplify = FALSE)
 
-output <- do.call(rbind, check_1000) # formatting it 
+df.out <- do.call(rbind, check_1000) %>%  
+  dplyr::mutate(
+    difference = estimate - 1.5, # estimating difference between estimated effect and "true" effect
+    squared = (difference - mean(difference))^2
+  ) 
 
-# Situation 2: One Model Correctly Specified ----
 
-#... Fitting PS mMdel ----
+# Calculating the mean bias and Monte Carlo SE of estimate
 
-#.... Fitting Outcome Model ----
+# See Morris et al. (2019) for details on calculating these
+
+mean(df.out$difference) # bias  
+sqrt(sum(df.out$squared)*(1 / (1000*999))) # Monte Carlo SE of bias (1000 is number of simulations, 999 is n - 1)
+
+# Scenario 2: One Model Correctly Specified ----
+
+# Repeating the same as scenario 1 however in this situation there is only one model that 
+# is correctly specified (in this case, the propensity score model)
+
+scenario2 <- function(n = 250, beta_trt = 1.5){
+  
+  df <- sim_data()
+  
+  psmod2 <- WeightIt::weightit(x ~ z1 + z2, 
+                               data = df, 
+                               estimand = "ATE",
+                               stabilize = TRUE)
+  
+  outmod2 <- glm(y ~ x + z2, 
+                 data = df, 
+                 weights = psmod1$weights,
+  )
+  
+  results <- broom::tidy(outmod2) %>% 
+    filter(term == "x") %>% 
+    select(term, estimate, std.error) 
+  
+  return(results)
+  
+  
+}
+
+# Repeat...Repeat....Repeat! ----
+
+# Using the function we will repeat it 1000 times. 
+
+check_1000 <- replicate(1000, scenario2(), simplify = FALSE)
+
+df.out <- do.call(rbind, check_1000) %>%  # formatting it
+  dplyr::mutate(
+    difference = estimate - 1.5,
+    squared = (difference - mean(difference))^2
+  ) 
+
+
+# Calculating the mean bias and Monte Carlo SE of estimate
+
+# See Morris et al. (2019) for details on calculating these
+
+mean(df.out$difference) # bias  
+sqrt(sum(df.out$squared)*(1 / (1000*999))) # Monte Carlo SE of bias (1000 is number of simulations, 999 is n - 1)
 
 # Situation 3: Neither Model Correctly Specified ----
 
-#... Fitting PS mMdel ----
+# Repeating the same as scenario 1 & 2 however in this situation neither model is 
+# correctly specified (i.e., both are wrong)
 
-#.... Fitting Outcome Model ----
+scenario3 <- function(n = 250, beta_trt = 1.5){
+  
+  df <- sim_data()
+  
+  psmod3 <- WeightIt::weightit(x ~ z2, 
+                               data = df, 
+                               estimand = "ATE",
+                               stabilize = TRUE)
+  
+  outmod3 <- glm(y ~ x + z1, 
+                 data = df, 
+                 weights = psmod3$weights,
+  )
+  
+  results <- broom::tidy(outmod3) %>% 
+    filter(term == "x") %>% 
+    select(term, estimate, std.error) 
+  
+  return(results)
+  
+  
+}
 
+# Repeat...Repeat....Repeat! ----
 
+# Using the function we will repeat it 1000 times. 
 
+check_1000 <- replicate(1000, scenario3(), simplify = FALSE)
 
-
-# Bayesian Model ----
-
-# Setting Priors 
-
-priors <- c(
-  prior(normal(0, 2), class = "b", coef = "x"),
-  prior(normal(0, 2), class = "b", coef = "z1"), 
-  prior(normal(0, 2), class = "b", coef = "z2")
-)
-
-# Fitting models 
-
-#... Model with an effect
-
-mod1 <- brms::brm(y ~ x + z1 + z2, 
-                  family = gaussian(link = "identity"), 
-                  data = df_with_effect, 
-                  prior = priors)
-
-pp_check(mod1) # checking posterior distribution
-
-#... Model with dataset with no effect 
-
-mod2 <- brms::brm(y ~ x + z1 + z2, 
-                  family = gaussian(link = "identity"), 
-                  data = df_with_no_effect, 
-                  prior = priors)
-
-pp_check(mod2) # checking posterior distribution
-
-# Let's Plot the Parameter! ----
-
-# Here we are just plotting the parameter to see what the results look like
-
-# For when there is an effect
-
-mod1 %>% 
-  spread_draws(b_x) %>% 
-  ggplot(aes(x = b_x)) +
-  stat_halfeye(fill = "pink", 
-               color = "purple",
-  ) + 
-  labs(x = "Effect Estimate",
-       y = "Density") + 
-  # Edit the titile
-  ggtitle("Effect Estimate",
-          subtitle = "Prior ~ N(0,2)") +
-  custom_theme()
-
-# For when there is no effect 
-
-mod2 %>% 
-  spread_draws(b_x) %>% 
-  ggplot(aes(x = b_x)) +
-  stat_halfeye(fill = "pink", 
-               color = "purple",
-  ) + 
-  labs(x = "Effect Estimate",
-       y = "Density") + 
-  # Edit the titile
-  ggtitle("Effect Estimate",
-          subtitle = "Prior ~ N(0,2)") +
-  custom_theme()
+df.out <- do.call(rbind, check_1000) %>%  # formatting it
+  dplyr::mutate(
+    difference = estimate - 1.5,
+    squared = (difference - mean(difference))^2
+  ) 
 
 
-# Calculating ROPE ----
+# Calculating the mean bias and Monte Carlo SE of estimate
 
-# The ROPE is the region of practical equivalence. This is helpful because it can help
-# us determine what the region would be where we'd basically say there is no effect. 
-# For example, 0 is no effect. What about 0.3? What about 0.4? 
+# See Morris et al. (2019) for details on calculating these
 
-# Note: this is meant to be an introduction. For more details, recommend the bayestestR vignette here: 
-# https://easystats.github.io/bayestestR/reference/rope.html
+mean(df.out$difference) # bias  
+sqrt(sum(df.out$squared)*(1 / (1000*999))) # Monte Carlo SE of bias (1000 is number of simulations, 999 is n - 1)
 
-#... When There Is an Effect ----
 
-rope(mod1) # we can see what percent is in ROPE
-
-percentage_in_rope <- rope(mod1, parameters = "x")
-
-plot(percentage_in_rope) + 
-  custom_theme() +
-  labs(subtitle = "True Effect is 1.5",
-       x = "Possible parameter values for effect estimate",
-       y = "Density",
-       fill = "Credible Interval")
-
-#... When There is No Effect ----
-
-# For All Parameters: 
-
-rope(mod2) # we can see what percent is in ROPE
-
-percentage_in_rope2 <- rope(mod2, parameters = "x")
-
-plot(percentage_in_rope2) + 
-  custom_theme() +
-  labs(subtitle = "True Effect is 0",
-       x = "Possible parameter values for effect estimate",
-       y = "Density",
-       fill = "Credible Interval")
