@@ -1,6 +1,6 @@
 # Title: Estimating variance with PS-based methods
 
-# Description: Demonstrating two different ways to estimate variance 
+# Description: Demonstrating three different ways to estimate variance 
 # after using PS-based methods. 
 
 # Setup ----
@@ -104,9 +104,6 @@ boot_cis <- int_pctl(boot_results, results)[2,] %>% # calculating the CIs based 
 
 # Estimating variance using the robust variance estimator (aka Huber "Sandwich" Estimator)
 
-?sandwich::vcovCL()
-
-?sandwich::vcovHC
 
 robust_var <- sandwich::vcovHC(mod, type = "HC1") # estimating the variance-covariance matrix
 robust_se <- sqrt(diag(robust_var)) # if we take the square root of the diagonal of the matrix, we 
@@ -126,6 +123,25 @@ robust_ci <- data.frame(
   upper = trt_estimate + 1.96*trt_robust_se,
   type = "Robust Variance\n Estimator"
 )
+
+#... M-Estimation ----
+
+WeightIt::glm
+
+m_estmod <- glm_weightit(
+  y ~ x, 
+  family = gaussian(link = "identity"),
+  data = df,
+  weights = ps_model$weights # weights from the previous model 
+)
+
+m_est_ci <- data.frame(
+  lower = trt_estimate - 1.96*trt_robust_se, 
+  estimate = trt_estimate, 
+  upper = trt_estimate + 1.96*trt_robust_se,
+  type = "Robust Variance\n Estimator"
+)
+
 
 #... Combining into one dataframe ----
 
