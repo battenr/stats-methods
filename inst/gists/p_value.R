@@ -72,6 +72,8 @@ df_density <- data.frame(x = density_data$x, y = density_data$y)
 
 # Graph Time! ----
 
+obs_value <- test_statistic
+
 # Creating a plot that is the null distribution, with a vertical line showing the 
 # test statistic and the corresponding p-value. 
 
@@ -80,13 +82,13 @@ ggplot(data = null_dist,
   
   # Plotting Density
   
-  geom_density(size = 1) + 
+  geom_density(linewidth = 1.5, color = "purple") + 
   
   # Adding the test-statistic as a dark green vertical line
   
   geom_vline(xintercept = test_statistic, 
              color = "darkgreen", 
-             linewidth = 1) +
+             linewidth = 1.5) +
   
   # Using geom_ribbon to shade the area to the right of the test statistic on the 
   # plot. 
@@ -125,8 +127,8 @@ ggplot(data = null_dist,
   # Aligning plot titles. 
   
   theme(
-    plot.title = element_text(hjust = 0.5),
-    text = element_text(size = 16),
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    text = element_text(size = 20),
     plot.subtitle = element_text(hjust = 0.5)
   ) + 
   
