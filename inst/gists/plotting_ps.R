@@ -20,7 +20,7 @@ library(patchwork) # for combining plots
 # 3. Binary treatment (coffee)
 # 4. Continuous outcome: happiness (although not needed)
 
-sample.size = 1000 # arbitrary sample size
+sample.size = 250 # arbitrary sample size
 
 df <- data.frame(
   donut_eaten = rbinom(n = sample.size, size = 1, prob = 0.3),
@@ -28,14 +28,17 @@ df <- data.frame(
   ) %>% 
   dplyr::mutate(
     coffee = rbinom(n = sample.size, size = 1, prob = plogis(0.2*hours_sleep + 0.1*donut_eaten)),
-    happy = rnorm(n = sample.size, mean = 10 + 0.5 * hours_sleep + 2 * coffee + 0.1 * donut_eaten)
+    happy =  10 + 0.5 * hours_sleep + 2 * coffee + 0.1 * donut_eaten + rnorm(n = n, mean = 0, sd = 1)
   )
 
 # Calculating IPTW ----
 
 w <- WeightIt::weightit(
   formula = coffee ~ hours_sleep + donut_eaten, # PS formula of form: trt ~ covariates
-  data = df # dataframe from above
+  data = df,
+  method = "glm",
+  estimand = "ATE", 
+  stabilize = TRUE # dataframe from above
 )
 
 # Plots ----
@@ -45,7 +48,7 @@ w <- WeightIt::weightit(
 
 #... Overall Propensity Scores
 
-p1 <- cobalt::bal.plot(w, which = "both") + 
+p1 <- cobalt::bal.plot(w, var.name = "prop.score", which = "both") + 
   ggtitle("Distribution of Propensity Score (using IPTW)") + 
   labs(x = "Propensity Score", fill = "Coffee") +
   scale_fill_discrete(labels = c("No", "Yes")) + 
@@ -71,3 +74,13 @@ p3 <- cobalt::bal.plot(w, var.name = "donut_eaten", which = "both") +
 # Combining Plots for Output ---
 
 p1 / (p2 + p3) # the / makes two lines
+
+cobalt::bal.tab(w,
+                continuous = "std", 
+                binary = "std"
+                )
+
+?bal.tab
+
+cobalt::bal.init(w)
+bal.tab.weightit(w)

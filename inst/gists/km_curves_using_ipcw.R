@@ -66,7 +66,7 @@ sim_data <- simsurv(
   maxt = 365, # 1 year so 365 days
   idvar = "id",
   ids = covariates$id, # subject ID
-  betas = c(treatment = -0.5, age = -0.005) # the treatment effect here would be a HR of 0.60. So log(0.6) = -0.5
+  betas = c(treatment = -0.5, age = -0.005, sex = -0.05) # the treatment effect here would be a HR of 0.60. So log(0.6) = -0.5
 )
 
 # Generating Censoring ----

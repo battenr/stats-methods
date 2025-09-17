@@ -28,7 +28,7 @@ df <- data.frame(
 summary(df$prob_candy_eater)
 
 library(ggsurvfit)
-install.packages("ggsurvfit")
+i#nstall.packages("ggsurvfit")
 
 # KM Curve to Test Data ----
 
