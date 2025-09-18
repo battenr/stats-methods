@@ -1,8 +1,8 @@
 # Title: Restricted Mean Survival Time 
 
 # Description: When using time-to-event outcomes, a common effect measure is 
-# the hazard ratio. There are several problems with this measure including selection bias, 
-# and a strange interpretability. 
+# the hazard ratio. For causal inference, there are several problems with this measure
+# including selection bias, and a strange interpretability. 
 
 # Luckily there are alternatives! 
 
@@ -14,31 +14,22 @@
 #... Libraries ----
 
 library(tidyverse) # ol' faithful
-library
-
-#... Functions ----
-
-source("R/custom_theme.R")
-source("R/sim_data.R")
-
-# Code ----
-
-
-
-
-
-
-# Description: 
-
-library(tidyverse)
-library(simsurv)
-library(simtrial)
+library(simsurv) # for simulating survival data
+library(simtrial) # in this case, to calculate the RMST 
+library(surminer) # for plots 
+library(survival) # fitting survival models (i.e., the Surv() function)
+library(patchwork) # combining plots 
 
 # Simulating Data ----
 
-# Set seed for reproducibility
-set.seed(42)
-n = 250
+set.seed(456) # setting seed for reproducibility 
+
+n = 250 # setting sample size, arbitrarily 
+
+#... Covariates ----
+
+# Adding two covariates z1 & z2, plus a binary treatment 
+# This is used in the simsurv function from the simsurv package
 
 covars <- data.frame(
   id = 1:n,
@@ -47,76 +38,75 @@ covars <- data.frame(
   trt = rbinom(n = n, size = 1, prob = 0.6)
 )
 
+#... Simulating Survival Data ----
 
-beta <- 0.5  # Effect of covariate (e.g., treatment effect)
-lambda <- 0.05  # Baseline hazard rate (for exponential distribution)
+# Using a Weibull distribution 
 
 # Generate data with a covariate and censoring
 sim_data <- simsurv(
   n = n,
-  dist = "weibull",   # Weibull distribution for survival times
-  lambdas = 0.05,        # Shape parameter for Weibull distribution
-  gammas = 1.5,         # Scale parameter for Weibull distribution
-  x = covars,  # Include covariate (age)
-  beta = c(trt = -0.5, z1 = -0.2, z2 = 0.3),   # Covariate effect
-  censor = 0.2 ,       # Censoring rate (20% censored)
-  maxt = 20
+  dist = "weibull", # Weibull distribution for survival times
+  lambdas = 0.05, # Scale parameter for Weibull distribution
+  gammas = 1.5, # Shape parameter for Weibull distribution 
+  x = covars, # the covariates from earlier (object named covars)
+  beta = c(trt = -0.5, z1 = -0.2, z2 = 0.3), # effects of each 
+  censor = 0.2, # Censoring rate (20% censored)
+  maxt = 24 # maximum time of 24
 ) 
 
+#... Joining Together ----
 
+# Combining the covariates and the survival dataframes 
 
 df <- sim_data %>% 
-  full_join(covars)
+  full_join(covars, by = "id")
 
+# Survival Plot -----
 
-fit0 <- surv_fit(Surv(eventtime, status) ~ 1, 
-                data = df %>% filter(trt == 0))
+# Fitting a model to create survival curves 
 
-surv_plot_trt0 <- survminer::ggsurvplot(
-  fit0,
-  data = df %>% filter(trt == 0),
-  risk.table = TRUE, 
-  palette = "Dark2",
-  conf.int = FALSE
+fit <- survfit(Surv(eventtime, status) ~ trt, 
+               data = df)
+
+# Creating curves and formatting 
+
+survminer::ggsurvplot(
+  fit,
+  data = df, 
+  risk.table = FALSE, 
+  palette = c("pink", "purple"),
+  conf.int = FALSE,
+  font.main = c(24, "bold"), 
+  linetype = ,
+  font.x = c(24, "bold"), 
+  font.y = c(24, "bold"),
+  legend.title = "Group",
+  legend.labs = c("No Coffee", "Coffee"),
+  xlab = "Hours", 
+  ylab = "Happiness Probability",
+  ggtheme = theme(
+    panel.background = element_blank(),     # Remove panel background
+    plot.background = element_blank(),      # Remove full plot background
+    panel.grid.major = element_blank(),     # Remove major grid lines
+    panel.grid.minor = element_blank(),     # Remove minor grid lines
+    axis.line = element_line(color = "black"),  # Keep axis lines
+    axis.ticks = element_line(color = "black"),  # Keep axis ticks
+    legend.text = element_text(size = 24, face = "bold"),
+    legend.title = element_text(size = 24, face = "bold"),
+    axis.text = element_text(size = 24)
+  )
 )
 
-fit1 <- surv_fit(Surv(eventtime, status) ~ 1, 
-                 data = df %>% filter(trt == 1))
 
-surv_plot_trt1 <- survminer::ggsurvplot(
-  fit1,
-  data = df %>% filter(trt == 1),
-  risk.table = TRUE, 
-  palette = "Dark2",
-  conf.int = FALSE
-)
+# Calculating the Difference in Restricted Mean Survival Time ----
 
-library(patchwork)
-
-
-surv_plot_trt1$plot + surv_plot_trt0$plot
-
-
-
-surv_plot$plot + geom_ribbon(data = data.frame(time = surv_plot$plot$data$time,
-                                surv = surv_plot$plot$data$surv,
-                                trt = rep(0, nrow(surv_plot$plot$data))),
-              aes(x = time, 
-                  ymin = 0, 
-                  ymax = surv,
-                  color = as.factor(trt), 
-                  fill = as.factor(trt)
-                  ), 
-                  alpha = 0.3) 
-   theme_minimal() +
-   labs(title = "Survival Curves with Area Under the Curve (RMST)",
-        subtitle = paste("RMST for Treatment 0: ", round(rmst_trt0$RMST, 2),
-                         " | RMST for Treatment 1: ", round(rmst_trt1$RMST, 2)))
-   
-simtrial::rmst(data = df, 
-               tau = 15, 
+rmst_result <- simtrial::rmst(data = df, 
+               tau = 16, # this is the restricted time (in this case 16 hours)
                formula = Surv(eventtime, status) ~ trt, 
                reference = "0")
+
+rmst_result$estimate
+rmst_result$se
 
 
 
