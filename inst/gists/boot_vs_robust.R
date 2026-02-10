@@ -126,8 +126,6 @@ robust_ci <- data.frame(
 
 #... M-Estimation ----
 
-WeightIt::glm
-
 m_estmod <- glm_weightit(
   y ~ x, 
   family = gaussian(link = "identity"),
