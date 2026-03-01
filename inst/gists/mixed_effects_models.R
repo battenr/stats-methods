@@ -21,8 +21,8 @@ library(broom.mixed) # to clean output from a mixed model
 # For simulating data 
 
 sim_data <- function(n_groups = 20, # number of clusters 
-                        n_per_group = 15, # number of individuals per group
-                        beta_trt = 1.5) { # "true" treatment effect 
+                     n_per_group = 15, # number of individuals per group
+                     beta_trt = 1.5) { # "true" treatment effect 
   
   # Creating the cluster-level effect (u1)
   # This will be considered "unobserved", something that we didn't measure
@@ -43,7 +43,8 @@ sim_data <- function(n_groups = 20, # number of clusters
       # Treatment assignment (randomized within clusters)
       x = rbinom(n = n(), 1, 0.5),
       # Outcome: Includes the hidden cluster effect (u1)
-      y = beta_trt * x + 0.5 * z1 + u1 + rnorm(n(), 0, 1)
+      y = beta_trt * x + 0.5 * z1 + u1 + rnorm(n(), 0, 1),
+      cluster_id = factor(cluster_id)
     )
   
   return(df)
@@ -57,22 +58,22 @@ data <- sim_data() # for simulating data, function in above section
 
 # Fitting Models ----
 
-#... GLM ----
+#... GLM (Accounting for Cluster) ----
 
-# Fitting a generalized linear model, accounting for the cluster_id but not 
-# for the random effects (a key part of linear mixed effects models)
+# Fitting a generalized linear model, accounting for the cluster_id. If we do not account for the clusters 
+# we would get misleading results. 
 
-model_glm <- glm(y ~ x + z1 + cluster_id, 
-             family = gaussian(link = "identity"),
-             data = data)
+model_glm <- glm(y ~ x + z1 + cluster_id, # this should 
+                 family = gaussian(link = "identity"),
+                 data = data)
 
 #... Mixed Effects Model ----
 
 # Fitting a linear mixed effects model
 
 model_mem <- glmer(y ~ x + z1 + (1 | cluster_id), 
-                  family = gaussian(link = "identity"),
-                  data = data)
+                   family = gaussian(link = "identity"),
+                   data = data)
 
 # Comparing Results ----
 
